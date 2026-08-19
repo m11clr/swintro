@@ -130,8 +130,8 @@
   .crawl h2{
     text-align:center;
     font-family: 'RocGroteskCompressed', 'Trebuchet MS', 'Arial Narrow', Arial, sans-serif;
-    font-size: 1em;
-    margin:0 0 2.2em 0;
+    font-size: 5em;
+    margin:0;
   }
   .crawl p{
     margin: 0 0 1.6em 0;
@@ -587,7 +587,7 @@
   var musicBtn = document.getElementById('musicBtn');
   var iconMusicOn = document.getElementById('iconMusicOn');
   var iconMusicOff = document.getElementById('iconMusicOff');
-  var musicOn = true;
+  var musicOn = false;
 
   function updateMusicIcon(){
     iconMusicOn.style.display = musicOn ? 'block' : 'none';
@@ -622,7 +622,7 @@
 
   // ---------- KICK OFF ----------
   playIntro();
-  tryPlayMusic();
+  updateMusicIcon();
 </script>
 
 </body>
