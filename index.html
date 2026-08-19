@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>YEDENACT — Episode X: The Force of Design</title>
+<style>
+  @font-face{
+    font-family: 'Denim';
+    src: url('DenimINKWDTRIAL-Medium.otf') format('opentype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face{
+    font-family: 'RocGroteskCompressed';
+    src: url('Kostic_-_Roc_Grotesk_Compressed_Medium.otf') format('opentype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  :root{
+    --blue: #4fc3f7;
+    --sw-yellow: #FDCA01;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background:#000; overflow:hidden;
+    font-family: 'Trebuchet MS', 'Arial Narrow', Arial, sans-serif;
+  }
+
+  /* ---------- STARFIELD ---------- */
+  .stars{
+    position:fixed; inset:0; z-index:0;
+    background:#000;
+  }
+  .stars-layer{
+    position:absolute; inset:0;
+    border-radius:50%;
+    background:transparent;
+  }
+  #stars1{ width:2px; height:2px; }
+  #stars2{ width:3px; height:3px; }
+  #stars3{ width:4px; height:4px; }
+
+  /* ---------- BLUE INTRO TEXT ---------- */
+  .blue-text{
+    position:fixed; inset:0; z-index:10;
+    display:flex; align-items:center; justify-content:center;
+    padding: 0 8vw;
+    opacity:0;
+    transition: opacity 1s ease;
+    pointer-events:none;
+  }
+  .blue-text.show{ opacity:1; }
+  .blue-text-inner{
+    display:inline-block;
+    text-align:left;
+    color:var(--blue);
+    font-size: clamp(16px, 2.6vw, 30px);
+    letter-spacing: 0.03em;
+    line-height:1.5;
+  }
+
+  /* ---------- LOGO PLACEHOLDER ---------- */
+  .logo-wrap{
+    position:fixed; inset:0; z-index:10;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0;
+    transform: scale(1);
+    transition: opacity 1s ease;
+    pointer-events:none;
+  }
+  .logo-wrap.show{ opacity:1; }
+  .logo-img{
+    width: min(70vw, 620px);
+    height:auto;
+    display:block;
+  }
+
+  /* ---------- CRAWL ---------- */
+  .crawl-stage{
+    position:fixed; inset:0; z-index:5;
+    overflow:hidden;
+    opacity:0;
+    transition: opacity 1.5s ease;
+  }
+  .crawl-stage.show{ opacity:1; }
+
+  /* flat centering wrapper — no rotation here, just positions the tilted window */
+  .crawl-anchor{
+    position:absolute;
+    top: -55vh;
+    bottom: 0;
+    left:50%;
+    transform: translateX(-50%);
+    width: min(95vw, 1800px);
+    overflow:hidden;
+  }
+
+  /* the tilted 3D "window" the crawl scrolls through */
+  .crawl-window{
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+    transform: perspective(250px) rotateX(15deg);
+    transform-origin: 50% 100%;
+  }
+
+  .crawl{
+    position:absolute;
+    top: 100%;
+    left:0;
+    width:100%;
+    color: var(--sw-yellow);
+    text-align:justify;
+    font-family: 'Denim', 'Trebuchet MS', 'Arial Narrow', Arial, sans-serif;
+    font-weight:500;
+    font-size: clamp(24px, 3.6vw, 58px);
+    line-height:1.6;
+  }
+
+  .crawl h1{
+    text-align:center;
+    font-size: 1.15em;
+    margin:0 0 0.3em 0;
+  }
+  .crawl h2{
+    text-align:center;
+    font-family: 'RocGroteskCompressed', 'Trebuchet MS', 'Arial Narrow', Arial, sans-serif;
+    font-size: 1em;
+    margin:0 0 2.2em 0;
+  }
+  .crawl p{
+    margin: 0 0 1.6em 0;
+  }
+
+  /* fade text near horizon for extra depth illusion */
+  .crawl-stage::after{
+    content:"";
+    position:absolute; inset:0;
+    background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 18%, rgba(0,0,0,0) 78%, rgba(0,0,0,1) 100%);
+    pointer-events:none;
+    z-index:6;
+  }
+
+  /* ---------- CONTROLS ---------- */
+  .controls{
+    position:fixed;
+    top: 24px;
+    left:50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    opacity:0;
+    transition: opacity 1s ease;
+    pointer-events:none;
+  }
+  .controls.show{ opacity:1; pointer-events:auto; }
+
+  .controls-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  #playPauseBtn{
+    width:56px; height:56px;
+    border-radius:50%;
+    border: 1.5px solid rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  }
+  #playPauseBtn:hover{
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.9);
+  }
+  #playPauseBtn:active{ transform: scale(0.92); }
+  #playPauseBtn svg{ width:20px; height:20px; fill:#FDCA01; }
+
+  #speedBtn{
+    min-width:56px; height:56px;
+    padding: 0 14px;
+    border-radius:28px;
+    border: 1.5px solid rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    color:#FDCA01;
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    user-select:none;
+  }
+  #speedBtn:hover{
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.9);
+  }
+  #speedBtn:active{ transform: scale(0.94); }
+
+  #langBtn{
+    min-width:56px; height:56px;
+    padding: 0 14px;
+    border-radius:28px;
+    border: 1.5px solid rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    color:#FDCA01;
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    user-select:none;
+  }
+  #langBtn:hover{
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.9);
+  }
+  #langBtn:active{ transform: scale(0.94); }
+
+  #musicBtn{
+    width:56px; height:56px;
+    border-radius:50%;
+    border: 1.5px solid rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  }
+  #musicBtn:hover{
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.9);
+  }
+  #musicBtn:active{ transform: scale(0.92); }
+  #musicBtn svg{ width:20px; height:20px; fill:#FDCA01; }
+
+  @media (max-width: 700px){
+    .crawl-window{ transform: perspective(250px) rotateX(7deg); }
+  }
+
+  @media (max-width: 480px){
+    .crawl-anchor{ width: 92vw; }
+    #playPauseBtn{ width:48px; height:48px; }
+    #playPauseBtn svg{ width:17px; height:17px; }
+    .controls{ top:16px; }
+  }
+</style>
+</head>
+<body>
+
+  <audio id="bgMusic" src="song.mp3" preload="auto"></audio>
+
+  <div class="stars">
+    <div class="stars-layer" id="stars1"></div>
+    <div class="stars-layer" id="stars2"></div>
+    <div class="stars-layer" id="stars3"></div>
+  </div>
+
+  <div class="blue-text" id="blueText">
+    <div class="blue-text-inner" id="blueTextInner"></div>
+  </div>
+
+  <div class="logo-wrap" id="logoWrap">
+    <img class="logo-img" src="yedenact_sw_logo.svg" alt="YEDENACT logo">
+  </div>
+
+  <div class="crawl-stage" id="crawlStage">
+    <div class="crawl-anchor">
+      <div class="crawl-window" id="crawlWindow">
+        <div class="crawl" id="crawl"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls" id="controls">
+    <div class="controls-row">
+      <div id="speedBtn" aria-label="Playback speed">1x</div>
+      <div id="playPauseBtn" aria-label="Play/Pause/Reset">
+        <svg id="iconPause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+        <svg id="iconPlay" viewBox="0 0 24 24" style="display:none"><polygon points="6,4 20,12 6,20"></polygon></svg>
+        <svg id="iconReset" viewBox="0 0 24 24" style="display:none"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L14 11h7V4l-3.35 2.35z"></path></svg>
+      </div>
+      <div id="langBtn" aria-label="Language">CZ</div>
+      <div id="musicBtn" aria-label="Music on/off">
+        <svg id="iconMusicOn" viewBox="0 0 24 24"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>
+        <svg id="iconMusicOff" viewBox="0 0 24 24" style="display:none"><path d="M16.5 12A4.5 4.5 0 0014 7.97v2.17l2.45 2.45c.03-.19.05-.38.05-.59zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"></path></svg>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ---------- STARFIELD GENERATION ----------
+  function generateStars(id, count){
+    var shadows = [];
+    for(var i=0;i<count;i++){
+      var x = (Math.random()*100).toFixed(2);
+      var y = (Math.random()*100).toFixed(2);
+      shadows.push(x+'vw '+y+'vh #fff');
+    }
+    document.getElementById(id).style.boxShadow = shadows.join(',');
+  }
+  generateStars('stars1', 160);
+  generateStars('stars2', 80);
+  generateStars('stars3', 40);
+
+  // ---------- CONTENT (EN / CZ) ----------
+  var CONTENT = {
+    en: {
+      blue: [
+        'A long time ago in an agency not so far,',
+        'far away...'
+      ],
+      title: 'Episode X',
+      subtitle: 'THE FORCE OF DESIGN',
+      paragraphs: [
+        "In a galaxy full of flashy colors and chaos, Radek operates. For a full decade, he has fought on the front lines of graphic design. He completed rigorous training in wild startups, survived endless agency meetings, and designed countless websites. Ultimately, however, he discovered his true calling: brand design and building websites that make sense.",
+        "No discipline is an insurmountable obstacle for him. From the initial ideation and naming to the delivery of a final brand, Radek has assembled infinite pixels on online banners and spilled liters of ink on printed materials. When it comes to the web, he builds sites from scratch using Webflow and Framer. And if you ask him for an under-the-counter offline special, he'll drop his mouse, grab a tufting gun, and make you a rug.",
+        "In the modern era, he hasn't been left behind. He has surrounded himself with new cybernetic companions—Claude, Chat, and Gemini. They are his loyal droids, without whom navigating today's world would be impossible. But that doesn't mean he lets machines churn out weird, one-click posters. Not at all. Despite the daily assistance of artificial intelligence, his creations retain the most crucial element: a human soul.",
+        "His imagination survived even the darkest system of all—the traditional school system. When he isn't creating, he meditates in the gym or tames the waves on a wakeboard. Years of battles on the handball court forged him into a reliable team player who never shies away from tough collaboration or stepping up as a leader. The Force is with him, but he prefers to keep his feet firmly planted on his very own rug..."
+      ]
+    },
+    cz: {
+      blue: [
+        'Kdysi dávno, v jedné ne tak vzdálené agentuře...'
+      ],
+      title: 'Epizoda X',
+      subtitle: 'SÍLA DESIGNU',
+      paragraphs: [
+        "V galaxii plné křiklavých barev a chaosu operuje Radek. Už celou dekádu bojuje na frontách grafického designu. Prošel tvrdým výcvikem v divokých startupech, přežil nekonečné schůzky v agenturách a navrhl nespočet webů. Nakonec ale objevil své pravé poslání: brand design a tvorbu webů, které dávají smysl.",
+        "Žádná disciplína pro něj není nepřekonatelnou překážkou. Od úvodního idea makingu a namingu až po doručení finálního brandu, Radek poskládal nekonečno pixelů na online bannerech a prolil litry barev na tiskovinách. Když přijde řada na weby, staví je od nuly v systémech Webflow a Framer. A pokud se ho zeptáte na nějakou offline podpultovku, odloží myš, popadne tuftovací pistoli a vyrobí vám koberec.",
+        "V moderní éře nezůstal pozadu. Obklopil se novými kybernetickými společníky – Claudem, Chatem a Gemini. Jsou to jeho věrní droidi, bez kterých by se v dnešním světě už neobešel. To ale neznamená, že by nechal stroje chrlit podivné plakáty na jeden klik. To opravdu ne. I přes každodenní pomoc umělé inteligence má jeho tvorba stále to nejdůležitější – lidskou duši.",
+        "Jeho představivost totiž přežila i ten nejtemnější systém – klasickou školní docházku. Když zrovna netvoří, dobíjí štíty v posilovně nebo krotí vlny na wakeboardu. Léta bitev na házenkářském hřišti z něj udělala spolehlivého týmového hráče, který se nezalekne tvrdé spolupráce ani role lídra. Síla je s ním, ale on raději zůstává nohama pevně na svém vlastním koberci..."
+      ]
+    }
+  };
+
+  var currentLang = 'en';
+
+  function renderContent(lang){
+    var data = CONTENT[lang];
+    blueTextInner.innerHTML = data.blue.join('<br>');
+    var html = '<h1>' + data.title + '</h1><h2>' + data.subtitle + '</h2>';
+    data.paragraphs.forEach(function(p){ html += '<p>' + p + '</p>'; });
+    crawl.innerHTML = html;
+  }
+
+  // ---------- ELEMENT REFERENCES ----------
+  var blueText = document.getElementById('blueText');
+  var blueTextInner = document.getElementById('blueTextInner');
+  var logoWrap = document.getElementById('logoWrap');
+  var crawlStage = document.getElementById('crawlStage');
+  var controls = document.getElementById('controls');
+  var crawl = document.getElementById('crawl');
+
+  // ---------- CRAWL ANIMATION STATE ----------
+  var crawlWindow = document.getElementById('crawlWindow');
+  var offset = 0;          // 0 = start (bottom edge), grows as text scrolls up
+  var maxOffset = 0;       // computed once crawl height is known
+  var baseTopPx = 0;       // px height of the crawl-window (its coordinate frame is taller than the viewport)
+  var baseSpeed = 55;      // px per second at 1x
+  var speedSteps = [1, 1.5, 2];
+  var speedIndex = 0;
+  var paused = false;
+  var finished = false;
+  var crawlActive = false; // becomes true only once startCrawl() has computed real geometry
+  var manualScrolling = false;
+  var manualTimeout = null;
+  var lastTime = null;
+  var introTimers = [];
+
+  function computeGeometry(){
+    // IMPORTANT: use offsetHeight, not getBoundingClientRect() — the crawl-window
+    // has a 3D perspective/rotateX transform, so getBoundingClientRect() would return
+    // its foreshortened on-screen size instead of its real (flat) layout height.
+    baseTopPx = crawlWindow.offsetHeight;
+    var crawlHeight = crawl.offsetHeight;
+    maxOffset = crawlHeight + window.innerHeight * 1.1;
+  }
+
+  function applyOffset(){
+    crawl.style.top = (baseTopPx - offset) + 'px';
+  }
+
+  function checkFinished(){
+    var isAtEnd = offset >= maxOffset - 0.5;
+    if(isAtEnd && !finished){
+      finished = true;
+      updateButtonIcon();
+    } else if(!isAtEnd && finished){
+      finished = false;
+      updateButtonIcon();
+    }
+  }
+
+  // single persistent animation loop, started once — never re-created
+  function tick(timestamp){
+    if(lastTime === null) lastTime = timestamp;
+    var dt = (timestamp - lastTime) / 1000;
+    lastTime = timestamp;
+
+    if(crawlActive && !paused && !manualScrolling && !finished){
+      offset += baseSpeed * speedSteps[speedIndex] * dt;
+      if(offset < 0) offset = 0;
+      if(offset > maxOffset) offset = maxOffset;
+      applyOffset();
+      checkFinished();
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  function startCrawl(){
+    computeGeometry();
+    offset = 0; // scroll in from the very beginning
+    finished = false;
+    applyOffset();
+    lastTime = null;
+    crawlActive = true;
+  }
+
+  window.addEventListener('resize', function(){
+    if(!crawlActive) return;
+    computeGeometry();
+    applyOffset();
+  });
+
+  // ---------- FULL INTRO SEQUENCE (blue text -> logo -> crawl) ----------
+  function clearIntroTimers(){
+    introTimers.forEach(function(id){ clearTimeout(id); });
+    introTimers = [];
+  }
+
+  function playIntro(){
+    clearIntroTimers();
+
+    // reset all visual/animation state
+    finished = false;
+    paused = false;
+    offset = 0;
+    crawlActive = false;
+    updateButtonIcon();
+
+    blueText.classList.remove('show');
+    logoWrap.style.transition = 'none';
+    logoWrap.style.opacity = '0';
+    logoWrap.style.transform = 'scale(1)';
+    crawlStage.classList.remove('show');
+    controls.classList.remove('show');
+
+    renderContent(currentLang);
+
+    if(musicOn){
+      bgMusic.currentTime = 0;
+      bgMusic.play().catch(function(){});
+    }
+
+    introTimers.push(setTimeout(function(){ blueText.classList.add('show'); }, 300));
+    introTimers.push(setTimeout(function(){ blueText.classList.remove('show'); }, 3300));
+
+    var LOGO_IN_AT = 4300;
+    var LOGO_HOLD_MS = 2000;
+    var LOGO_SHRINK_MS = 3000;
+
+    introTimers.push(setTimeout(function(){
+      logoWrap.style.transition = 'opacity 1s ease';
+      logoWrap.style.opacity = '1';
+    }, LOGO_IN_AT));
+
+    introTimers.push(setTimeout(function(){
+      logoWrap.style.transition = 'opacity ' + LOGO_SHRINK_MS + 'ms ease-in, transform ' + LOGO_SHRINK_MS + 'ms ease-in';
+      logoWrap.style.transform = 'scale(0.05)';
+      logoWrap.style.opacity = '0';
+    }, LOGO_IN_AT + 1000 + LOGO_HOLD_MS));
+
+    var CRAWL_START_AT = LOGO_IN_AT + 1000 + LOGO_HOLD_MS + LOGO_SHRINK_MS + 300;
+
+    introTimers.push(setTimeout(function(){
+      crawlStage.classList.add('show');
+      controls.classList.add('show');
+      startCrawl();
+    }, CRAWL_START_AT));
+  }
+
+  // ---------- MANUAL SCROLL (wheel + touch) ----------
+  function handleManualDelta(delta){
+    offset += delta;
+    if(offset < 0) offset = 0;
+    if(offset > maxOffset) offset = maxOffset;
+    applyOffset();
+    checkFinished();
+
+    manualScrolling = true;
+    if(manualTimeout) clearTimeout(manualTimeout);
+    manualTimeout = setTimeout(function(){
+      manualScrolling = false;
+    }, 1000);
+  }
+
+  window.addEventListener('wheel', function(e){
+    e.preventDefault();
+    handleManualDelta(e.deltaY * 0.9);
+  }, { passive:false });
+
+  var touchStartY = null;
+  window.addEventListener('touchstart', function(e){
+    touchStartY = e.touches[0].clientY;
+  }, { passive:true });
+
+  window.addEventListener('touchmove', function(e){
+    if(touchStartY === null) return;
+    var currentY = e.touches[0].clientY;
+    var delta = touchStartY - currentY;
+    touchStartY = currentY;
+    handleManualDelta(delta * 1.4);
+    e.preventDefault();
+  }, { passive:false });
+
+  window.addEventListener('touchend', function(){
+    touchStartY = null;
+  });
+
+  // ---------- PLAY / PAUSE / RESET BUTTON ----------
+  var btn = document.getElementById('playPauseBtn');
+  var iconPlay = document.getElementById('iconPlay');
+  var iconPause = document.getElementById('iconPause');
+  var iconReset = document.getElementById('iconReset');
+
+  function updateButtonIcon(){
+    iconPlay.style.display = 'none';
+    iconPause.style.display = 'none';
+    iconReset.style.display = 'none';
+    if(finished){
+      iconReset.style.display = 'block';
+    } else if(paused){
+      iconPlay.style.display = 'block';
+    } else {
+      iconPause.style.display = 'block';
+    }
+  }
+
+  btn.addEventListener('click', function(){
+    if(finished){
+      // full replay: blue text, logo, and crawl all restart from the very beginning
+      playIntro();
+    } else {
+      paused = !paused;
+      updateButtonIcon();
+    }
+  });
+
+  // ---------- SPEED BUTTON ----------
+  var speedBtn = document.getElementById('speedBtn');
+  speedBtn.addEventListener('click', function(){
+    speedIndex = (speedIndex + 1) % speedSteps.length;
+    speedBtn.textContent = speedSteps[speedIndex] + 'x';
+  });
+
+  // ---------- LANGUAGE BUTTON ----------
+  var langBtn = document.getElementById('langBtn');
+  function updateLangButton(){
+    langBtn.textContent = currentLang === 'en' ? 'CZ' : 'EN';
+  }
+  langBtn.addEventListener('click', function(){
+    currentLang = currentLang === 'en' ? 'cz' : 'en';
+    updateLangButton();
+    renderContent(currentLang);
+    if(crawlActive){
+      // recompute geometry since paragraph lengths differ between languages
+      computeGeometry();
+      checkFinished();
+      applyOffset();
+    }
+  });
+  updateLangButton();
+
+  // ---------- MUSIC ----------
+  var bgMusic = document.getElementById('bgMusic');
+  var musicBtn = document.getElementById('musicBtn');
+  var iconMusicOn = document.getElementById('iconMusicOn');
+  var iconMusicOff = document.getElementById('iconMusicOff');
+  var musicOn = true;
+
+  function updateMusicIcon(){
+    iconMusicOn.style.display = musicOn ? 'block' : 'none';
+    iconMusicOff.style.display = musicOn ? 'none' : 'block';
+  }
+
+  function tryPlayMusic(){
+    if(!musicOn) return;
+    var p = bgMusic.play();
+    if(p !== undefined){
+      p.catch(function(){
+        // autoplay was blocked by the browser — resume on the first user interaction
+        var resume = function(){
+          if(musicOn) bgMusic.play().catch(function(){});
+        };
+        document.addEventListener('click', resume, { once:true });
+        document.addEventListener('touchstart', resume, { once:true });
+        document.addEventListener('keydown', resume, { once:true });
+      });
+    }
+  }
+
+  musicBtn.addEventListener('click', function(){
+    musicOn = !musicOn;
+    if(musicOn){
+      bgMusic.play().catch(function(){});
+    } else {
+      bgMusic.pause();
+    }
+    updateMusicIcon();
+  });
+
+  // ---------- KICK OFF ----------
+  playIntro();
+  tryPlayMusic();
+</script>
+
+</body>
+</html>
